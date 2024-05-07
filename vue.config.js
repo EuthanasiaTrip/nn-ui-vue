@@ -19,7 +19,8 @@ module.exports = defineConfig({
               "to": "src/ml_model/",
               "filter": ["**/*"]
           }
-        ]
+        ],
+        preload: 'src/preload.js'
       }
     }
   }

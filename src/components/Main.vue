@@ -2,6 +2,8 @@
   <div>
     <p style="color:red; font-size: x-large">Оценка вероятности неблагоприятного исхода</p>
     <div>
+      <loading v-model:active="this.isShowLoading"
+                 :is-full-page="true"/>
       <Modal v-model:visible="isChartModalVisible" title="График предсказаний">
         <Line :data="this.chartData" :options="this.chartOptions"> </Line>
       </Modal>
@@ -58,6 +60,17 @@
             style="margin-right: 1%"
           >
             Предсказать по точкам
+          </button>
+          <select v-model="modelName">
+            <option disabled value="">Выберите модель</option>
+            <option v-bind:value="'covidNet'">Нейронная сеть (CovidNet)</option>
+            <option v-bind:value="'histgboost'">HistGBoost</option>
+          </select>
+          <button
+            v-on:click="onSetTestDataClick"
+            style="margin-right: 1%"
+          >
+            Заполнить тестовыми данными
           </button>
           <p>
             {{ currentPointCaption }}
@@ -379,6 +392,10 @@ import {
   PointElement,
 } from "chart.js";
 import { Line } from "vue-chartjs";
+
+import Loading from 'vue-loading-overlay';
+import 'vue-loading-overlay/dist/css/index.css';
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -391,7 +408,7 @@ ChartJS.register(
 
 export default {
   name: "MainWindow",
-  components: { Modal, Line },
+  components: { Modal, Line, Loading },
   data() {
     return {
       history: [],
@@ -517,12 +534,14 @@ export default {
       },
       isAllFieldsNotEmpty: false,
       showErrorModal: false,
-      errorMsg: ""
+      errorMsg: "",
+      isShowLoading: false,
+      modelName: ""
     };
   },
   methods: {
-    async onButtonClick() {
-      if (this.checkHasEmptyFields([this])) {
+    async onButtonClick() {       
+      if (this.checkHasEmptyFields([this]) && this.modelName !== 'histgboost') {
         this.errorMsg = "Заполните все поля";
         this.showErrorModal = true;
         return;
@@ -532,7 +551,30 @@ export default {
         this.showErrorModal = true;
         return;
       }
-      this.prediction = await this.getPrediction();
+      // this.prediction = await this.getPrediction();
+      if(!this.modelName) {
+        this.modelName = 'covidNet'
+      }
+      const scope = this;
+      this.isShowLoading = true;
+      fetch("http://localhost:9731/run-script",{
+        method: "POST",
+        headers: {'Content-Type': 'application/json'}, 
+        body: JSON.stringify({
+          model: this.modelName,
+          data: this.getCardData()
+        })
+      }).then(async function (response) {
+        response = await response.json();
+        if(response && response.out && response.out.replace(/\r\n/g, '')) {
+          scope.prediction = response.out.replace(/\r\n/g, '');
+          scope.isShowLoading = false;
+        }
+        else if(!response || (!response.out && response.err)) {
+          scope.isShowLoading = false;
+          //window.electronDialog.showErrorBox("Ошибка", "Произошла ошибка при запросе к модели");
+        }
+      });      
     },
 
     checkHasEmptyFields(points) {
@@ -683,6 +725,10 @@ export default {
       return pred.dataSync()[0];
     },
 
+    getCardData() {
+      return this.getDataFormData();
+    },
+
     getMaxDNSeverityCategory(value) {
       switch(value){
         case "2":
@@ -710,26 +756,34 @@ export default {
     },
 
     getDataFormData() {
-      const columnsToGet = this.fieldsNames.filter(
-        (name) =>
-          !["maxDNSeverityCategory", "maxKT", "prediction"].includes(name)
-      );
-      let data = [];
+      const columnsToGet = this.fieldsNames
+        .filter(
+          (name) =>
+            !["isPregnant", "prediction", "minMNO", "isEmployed"].includes(name)
+        );
+      let data = {};
       columnsToGet.forEach((name) => {
-        if (["isEmployed",
-              "hasAsthma",
-              "hasDiabetes",
-              "hasHPN",
-              "hasPneumo",
-              "hasHIV"].includes(name)) {
-          data.push(!this[name]);
-        } else if(name === "maxTemp") {
-            data.push(76 - this[name])
-        } else {
-          data.push(this[name]);
-        }
+        // if (["isEmployed",
+        //       "hasAsthma",
+        //       "hasDiabetes",
+        //       "hasHPN",
+        //       "hasPneumo",
+        //       "hasHIV"].includes(name)) {
+        //   data.push(!this[name]);
+        // } else if(name === "maxTemp") {
+        //     data.push(76 - this[name])
+        // } else {
+        //   data.push(this[name]);
+        // }
+        // data.push({
+        //   name: name,
+        //   value: this.castValue(this[name])
+        //   });
+        let value = this.castValue(this[name]);
+        let upperCaseName = name.charAt(0).toUpperCase() + name.slice(1);
+        data[upperCaseName] = value;
       });
-      return data.map((item) => this.castValue(item));
+      return data;
     },
 
     castValue(value) {
@@ -799,6 +853,39 @@ export default {
       }
       this.isChartModalVisible = true;
       this.predictDataByHistory();
+    },
+
+    onSetTestDataClick() {
+      this.sex = false;
+      this.age = 65;
+      this.weight = 80;
+      this.isSmoking = true;
+      this.maxTemp = 38;
+      this.maxDNSeverityCategory = "0";
+      this.maxBP = 23;
+      this.minSaturation = 85;
+      this.hasPneumo = true;
+      this.maxKT = "0";
+      this.hasAsthma = true;
+      this.minAbsLymph = 0.84;
+      this.maxAbsLeic = 15.54;
+      this.minHemoglobin = 150;
+      this.maxPlt = 380;
+      this.maxESR = 37;
+      this.maxCommonProtein = 65.8;
+      this.maxCProtein = 104;
+      this.maxGlucose = 21;
+      this.maxBilirubin = 17.7;
+      this.maxALT = 97.17;
+      this.maxAST = 97.38;
+      this.maxUrea = 12;
+      this.maxCreatinine = 152;
+      this.maxMNO = 1.46;
+      this.minMNO = 1.32;
+      this.maxFerritin = 530;
+      this.maxDDimer = 4;
+      this.minProtrombIndex = 68;
+      this.maxFibrinogen = 4;
     },
 
     saveHistory() {
