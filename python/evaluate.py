@@ -102,10 +102,10 @@ def normalize_numeric(dataframe):
     return data_numeric_cols
 
 if __name__ == "__main__":
-    model_name = sys.argv[1]
+    hasEmptyData = json.loads(sys.argv[1])
     inputData = json.loads(sys.argv[2])
 
-    data = pandas.DataFrame([inputData])
+    data = pandas.DataFrame(inputData)
 
     for col in cols:
         data[col] = data[col].astype(float)
@@ -116,14 +116,23 @@ if __name__ == "__main__":
     data_processed = category_data.join(numeric_data)
     data_processed = data_processed.astype(float)
 
-    if model_name == 'covidNet':
-        model = load_model(dirpath + "/models/covidnet")
-        prediction = model.predict(data_processed, verbose=0)
-        print(prediction[0, 0])
-    else:
-        model = load_ml_model(model_name)
-        prediction = model.predict_proba(data_processed)
-        print(prediction[0, 1])    
+    models = [
+        'covidNet',
+        'histgboost'
+    ]
+    predictions = []
+    for model_name in models:
+        if model_name == 'covidNet' and not hasEmptyData:
+            model = load_model(dirpath + "/models/covidnet")
+            prediction = model.predict(data_processed, verbose=0)
+            predictions.append({"model": model_name, "pred": prediction[:,0].tolist()})
+        else:
+            if model_name != 'histgboost' and hasEmptyData:
+                continue            
+            model = load_ml_model(model_name)
+            prediction = model.predict_proba(data_processed)
+            predictions.append({"model": model_name, "pred": prediction[:,1].tolist()})
+    print(json.dumps(predictions))    
 
     #TODO: проверить работоспособность в билде
     # print(os.path.dirname(os.path.realpath(__file__)))

@@ -18,9 +18,7 @@ app.get('/group1-shard1of1.bin', (req, res) => {
 
 app.post('/run-script', (req, res) => {
     const spawn = require("child_process").spawn;
-    // console.log(req.body);
-    console.log(req.body.model);
-    const pythonProcess = spawn('python', [".\\python\\evaluate.py", req.body.model, JSON.stringify(req.body.data)]);
+    const pythonProcess = spawn('python', [".\\python\\evaluate.py", req.body.hasEmptyData, JSON.stringify(req.body.data)]);
     
     let stdoutChunks = [];    
     pythonProcess.stdout.on('data', (data) => {
@@ -29,7 +27,6 @@ app.post('/run-script', (req, res) => {
     pythonProcess.stdout.on('end', () => {        
         const stdoutContent = Buffer.concat(stdoutChunks).toString();
         const stderrContent = Buffer.concat(stderrChunks).toString();
-        // console.log(stdoutContent);
         if(!res.headersSent) {            
             res.send({
                 err: stderrContent,
