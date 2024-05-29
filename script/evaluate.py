@@ -123,7 +123,7 @@ if __name__ == "__main__":
     predictions = []
     for model_name in models:
         if model_name == 'covidNet' and not hasEmptyData:
-            model = load_model(dirpath + "/models/covidnet")
+            model = load_model(dirpath + "/models/covidnet/covidnet.h5")
             prediction = model.predict(data_processed, verbose=0)
             predictions.append({"model": model_name, "pred": prediction[:,0].tolist()})
         else:

@@ -503,6 +503,7 @@ export default {
       wasInResuscitation: false,
       covidNetPred: 0,
       histgboostPred: 0,
+      logisticregressionPred: 0,
       isModalVisible: false,
       chartData: {
         labels: ["0"],
@@ -526,12 +527,15 @@ export default {
     onPredictClick() {
       this.covidNetPred = 0;
       this.histgboostPred = 0;
-      if (this.checkHasNotNumValues(this.history.concat(this))) {
+      this.logisticregressionPred = 0;
+      const historyItem = this.currentPoint > 0 ? this.history.concat(this) : [this];
+      if (this.checkHasNotNumValues(historyItem)) {
         this.errorMsg = "Введите только числовые значения";
         this.showErrorModal = true;
         return;
       }
-      const hasEmptyData = this.checkHasEmptyFields(this.history.concat(this));
+      const hasEmptyData = this.checkHasEmptyFields(historyItem);
+      console.log(hasEmptyData); 
       if (hasEmptyData) {
         this.infoMsg =
           "Заполнены не все поля. С пропусками данных будет только представлен результат модели HistGBoost";
@@ -541,7 +545,7 @@ export default {
       this.callPredictionService();
     },
 
-    callPredictionService() {
+    callPredictionService() { 
       const scope = this;
       this.isShowLoading = true;
       this.showInfoModal = false;
@@ -659,7 +663,7 @@ export default {
         this.writeHistory();
       } else {
         this.history[this.currentPoint] = this.saveHistory();
-      }
+      }    
       const columnsToGet = this.fieldsNames.filter(
         (name) =>
           !["isPregnant", "prediction", "minMNO", "isEmployed"].includes(name)
@@ -687,7 +691,7 @@ export default {
         this.showChart = true;
         const dataSets = predictions.map((item) => {
           return {
-            label: item.model,
+            label: item.model, 
             borderColor: this.getChartColor(item.model),
             backgroundColor: this.getChartColor(item.model),
             data: item.pred.map(i => (i* 100).toFixed(2)),
@@ -697,6 +701,8 @@ export default {
           labels: [...Array(dataLen).keys()],
           datasets: dataSets,
         };
+      } else {
+        this.showChart = false;
       }
     },
 
@@ -704,10 +710,13 @@ export default {
       let color = "#000000"
       switch(modelName){
         case "covidNet":
-          color = "#0080FF"
+          color = "#0080FF";
           break;
         case "histgboost":
-          color = "#FF007F"
+          color = "#FF007F";
+          break;
+        case "logisticregression":
+          color = "#CCCC00";
           break;
       }
       return color;

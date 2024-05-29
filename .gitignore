@@ -24,3 +24,7 @@ pnpm-debug.log*
 
 #Electron-builder output
 /dist_electron
+
+/script/nnuipython
+/script/dist
+/script/build

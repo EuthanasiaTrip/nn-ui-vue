@@ -17,26 +17,30 @@ app.get('/group1-shard1of1.bin', (req, res) => {
 });
 
 app.post('/run-script', (req, res) => {
-    const spawn = require("child_process").spawn;
-    const pythonProcess = spawn('python', [".\\python\\evaluate.py", req.body.hasEmptyData, JSON.stringify(req.body.data)]);
-    
-    let stdoutChunks = [];    
-    pythonProcess.stdout.on('data', (data) => {
-        stdoutChunks = stdoutChunks.concat(data);
-    });
-    pythonProcess.stdout.on('end', () => {        
-        const stdoutContent = Buffer.concat(stdoutChunks).toString();
-        const stderrContent = Buffer.concat(stderrChunks).toString();
-        if(!res.headersSent) {            
-            res.send({
-                err: stderrContent,
-                out: stdoutContent
-            }); 
-        }        
-    });
+    const spawn = require("child_process").execFileSync;
+    const pathToPython = '.\\script\\dist\\evaluate\\evaluate.exe';
+    const result = spawn(pathToPython, [req.body.hasEmptyData, JSON.stringify(req.body.data)]).toString().split(/\r?\n/);
+    res.send({
+        err: "",
+        out: result[result.length-2]
+    }); 
+    // let stdoutChunks = [];    
+    // pythonProcess.stdout.on('data', (data) => {
+    //     stdoutChunks = stdoutChunks.concat(data);
+    // });
+    // pythonProcess.stdout.on('end', () => {        
+    //     const stdoutContent = Buffer.concat(stdoutChunks).toString();
+    //     const stderrContent = Buffer.concat(stderrChunks).toString();
+    //     if(!res.headersSent) {            
+    //         res.send({
+    //             err: stderrContent,
+    //             out: stdoutContent
+    //         }); 
+    //     }        
+    // });
 
-    let stderrChunks = [];
-    pythonProcess.stderr.on('data', (data) => {
-        stderrChunks = stderrChunks.concat(data);
-    });
+    // let stderrChunks = [];
+    // pythonProcess.stderr.on('data', (data) => {
+    //     stderrChunks = stderrChunks.concat(data);
+    // });
 })
