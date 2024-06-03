@@ -10,17 +10,24 @@ module.exports = defineConfig({
         win: {
           icon: './src/assets/virus.png'
         },
+        nsis: {
+
+        },
         files: [
           "**/*"
         ],
         extraFiles: [
           {
-              "from": "src/ml_model/",
-              "to": "src/ml_model/",
+              "from": "script/build",
+              "to": "script/build",
+              "filter": ["**/*"]
+          },
+          {
+              "from": "script/dist",
+              "to": "script/dist",
               "filter": ["**/*"]
           }
-        ],
-        preload: 'src/preload.js'
+        ]
       }
     }
   }

@@ -1,6 +1,6 @@
 {
   "name": "nn-ui-vue",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
@@ -12,9 +12,7 @@
     "postuninstall": "electron-builder install-app-deps"
   },
   "main": "background.js",
-  "dependencies": {
-    "@tensorflow/tfjs-backend-webgl": "^4.5.0",
-    "@tensorflow/tfjs-node": "^4.5.0",
+  "dependencies": {    
     "chart.js": "^4.3.0",
     "copy-webpack-plugin": "^11.0.0",
     "core-js": "^3.8.3",
