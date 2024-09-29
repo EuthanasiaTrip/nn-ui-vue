@@ -2,15 +2,16 @@
 
 from PyInstaller.utils.hooks import collect_submodules
 
-hidden_imports = collect_submodules('keras')
+hiddenimports=['tflite_runtime']
 hidden_imports1 = collect_submodules('sklearn')
+hidden_imports2 = collect_submodules('numpy')
 
 a = Analysis(
     ['evaluate.py'],
     pathex=[],
     binaries=[],
     datas=[],
-    hiddenimports=hidden_imports + hidden_imports1,
+    hiddenimports=hiddenimports+hidden_imports1+hidden_imports2,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

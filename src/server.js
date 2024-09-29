@@ -14,24 +14,5 @@ app.post('/run-script', (req, res) => {
     res.send({
         err: "",
         out: result[result.length-2]
-    }); 
-    // let stdoutChunks = [];    
-    // pythonProcess.stdout.on('data', (data) => {
-    //     stdoutChunks = stdoutChunks.concat(data);
-    // });
-    // pythonProcess.stdout.on('end', () => {        
-    //     const stdoutContent = Buffer.concat(stdoutChunks).toString();
-    //     const stderrContent = Buffer.concat(stderrChunks).toString();
-    //     if(!res.headersSent) {            
-    //         res.send({
-    //             err: stderrContent,
-    //             out: stdoutContent
-    //         }); 
-    //     }        
-    // });
-
-    // let stderrChunks = [];
-    // pythonProcess.stderr.on('data', (data) => {
-    //     stderrChunks = stderrChunks.concat(data);
-    // });
+    });
 })

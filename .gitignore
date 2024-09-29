@@ -23,8 +23,11 @@ pnpm-debug.log*
 *.sw?
 
 #Electron-builder output
-/dist_electron
+/dist_electron*
 
 /script/nnuipython
 /script/dist
 /script/build
+/dist
+/script/evaluate*
+/script/temp2

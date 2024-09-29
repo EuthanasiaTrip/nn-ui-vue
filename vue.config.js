@@ -10,12 +10,13 @@ module.exports = defineConfig({
         win: {
           icon: './src/assets/virus.png'
         },
-        nsis: {
-
-        },
         files: [
           "**/*"
         ],
+        nsis: {
+          oneClick: false,
+          allowToChangeInstallationDirectory: true
+        },        
         extraFiles: [
           {
               "from": "script/build",

@@ -3,7 +3,8 @@ import json
 import os
 import pandas
 import pickle
-from keras.models import load_model
+import tflite_runtime.interpreter as tflite
+import numpy as np
 
 dirpath = os.path.dirname(os.path.realpath(__file__))
 
@@ -56,11 +57,27 @@ cols = [
 
 category_cols = ['Sex', 'IsSmoking', 'HasIBS', 'HasMyocardInfarct', 'HasONMK', 'HasHypertonia', 'HasHOBL', 'HasDiabetes', 'HasObesity', 'HasHPN', 'HasCancer', 'HasHIV', 'HasPneumo', 'MaxKT', 'HasAsthma', 'CovidVac', 'FluVac', 'PneumococcusVac', 'WasInResuscitation', 'WasOnIVL']
 
+class TFLiteModel:
+    def __init__(self, model_path: str):
+        self.interpreter = tflite.Interpreter(model_path)
+        self.interpreter.allocate_tensors()
+
+        self.input_details = self.interpreter.get_input_details()
+        self.output_details = self.interpreter.get_output_details()
+
+    def predict(self, *data_args):
+        assert len(data_args) == len(self.input_details)
+        for data, details in zip(data_args, self.input_details):
+            data = np.float32(data)
+            self.interpreter.set_tensor(details["index"], data)
+        self.interpreter.invoke()
+        return self.interpreter.get_tensor(self.output_details[0]["index"])
+
 def load_object(filename):
     filename = dirpath + '/bin/' + filename    
     object = None
     with open(filename, 'rb') as f:
-        object = pickle.load(f)
+        object = pandas.read_pickle(f)
     return object
 
 def load_ml_model(modelname):
@@ -123,8 +140,8 @@ if __name__ == "__main__":
     predictions = []
     for model_name in models:
         if model_name == 'covidNet' and not hasEmptyData:
-            model = load_model(dirpath + "/models/covidnet/covidnet.h5")
-            prediction = model.predict(data_processed, verbose=0)
+            model = TFLiteModel(dirpath + "/models/covidnet/covidnet.tflite")
+            prediction = model.predict(data_processed)
             predictions.append({"model": model_name, "pred": prediction[:,0].tolist()})
         else:
             if model_name != 'histgboost' and hasEmptyData:
@@ -134,6 +151,4 @@ if __name__ == "__main__":
             predictions.append({"model": model_name, "pred": prediction[:,1].tolist()})
     print(json.dumps(predictions))    
 
-    #TODO: проверить работоспособность в билде
-    # print(os.path.dirname(os.path.realpath(__file__)))
     sys.stdout.flush()

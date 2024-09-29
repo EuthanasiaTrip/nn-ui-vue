@@ -17,20 +17,8 @@
             "
           >
             <p>
-              CovidNet (нейронная сеть):
+              Вероятность:
               {{ (covidNetPred * 100).toFixed(2) + "%" }}
-            </p>
-          </div>
-          <div
-            style="
-              display: flex;
-              justify-content: flex-start;
-              align-items: center;
-              flex-direction: row;
-            "
-          >
-            <p>
-              HistGradientBoost: {{ (histgboostPred * 100).toFixed(2) + "%" }}
             </p>
           </div>
         </div>
@@ -95,7 +83,7 @@
           <button v-on:click="onPredictClick" style="margin-right: 1%">
             Сделать предсказание
           </button>
-          <button v-on:click="onSetTestDataClick" style="margin-right: 1%">
+          <button v-on:click="onSetTestDataClick" style="margin-right: 1%" v-show="true">
             Заполнить тестовыми данными
           </button>
           <p>
@@ -261,10 +249,6 @@
           <label for="checkbox" style="padding-right: 15px">Рак</label>
           <input type="checkbox" id="checkbox-cancer" v-model="hasCancer" />
         </div>
-        <!-- <div style="padding-top: 15px">
-          <label for="checkbox" style="padding-right: 15px">ВИЧ-инфекция</label>
-          <input type="checkbox" id="checkbox-hiv" v-model="hasHIV" />
-        </div>                                           -->
       </div>
       <div class="input-layout-column">
         <div style="color: red">Лабораторные показатели</div>
@@ -329,17 +313,9 @@
             :placeholder="numberInputPlaceholder"
           />
         </div>
-        <!-- <div style="padding-top: 15px">
-          <label for="checkbox" style="padding-right: 15px">Работает</label>
-          <input type="checkbox" id="checkbox-employed" v-model="isEmployed" />
-        </div>-->
         <div style="padding-top: 15px">
           <span style="padding-right: 15px">МНО max:</span>
           <input v-model="maxMNO" :placeholder="numberInputPlaceholder" />
-        </div>
-        <div style="padding-top: 15px">
-          <span style="padding-right: 15px">МНО min:</span>
-          <input v-model="minMNO" :placeholder="numberInputPlaceholder" />
         </div>
         <div style="padding-top: 15px">
           <span style="padding-right: 15px">Ферритин:</span>
@@ -406,7 +382,6 @@ export default {
         "age",
         "weight",
         "isSmoking",
-        "isPregnant",
         "minAbsLymph",
         "maxAbsLeic",
         "maxPlt",
@@ -421,7 +396,6 @@ export default {
         "maxAST",
         "maxBilirubin",
         "maxMNO",
-        "minMNO",
         "minProtrombIndex",
         "maxFibrinogen",
         "maxCreatinine",
@@ -429,7 +403,6 @@ export default {
         "maxTemp",
         "minSaturation",
         "maxBP",
-        "isEmployed",
         "hasIBS",
         "hasMyocardInfarct",
         "hasONMK",
@@ -458,9 +431,7 @@ export default {
       age: null,
       weight: null,
       isSmoking: false,
-      isPregnant: false,
       maxDNSeverityCategory: "",
-      isEmployed: true,
       hasIBS: false,
       hasMyocardInfarct: false,
       hasONMK: false,
@@ -490,7 +461,6 @@ export default {
       maxAST: null,
       maxBilirubin: null,
       maxMNO: null,
-      minMNO: null,
       minProtrombIndex: null,
       maxFibrinogen: null,
       maxCreatinine: null,
@@ -535,13 +505,7 @@ export default {
         return;
       }
       const hasEmptyData = this.checkHasEmptyFields(historyItem);
-      console.log(hasEmptyData); 
-      if (hasEmptyData) {
-        this.infoMsg =
-          "Заполнены не все поля. С пропусками данных будет только представлен результат модели HistGBoost";
-        this.showInfoModal = true;
-        return;
-      }
+      console.log(hasEmptyData);      
       this.callPredictionService();
     },
 
@@ -557,13 +521,23 @@ export default {
         response = await response.json();
         if (response && response.out && response.out.replace(/'/g, '"')) {
           const predictions = JSON.parse(response.out.replace(/'/g, '"'));
+          let rmsValues = [];
+          let rmsInput = [];
           predictions.forEach((item) => {
-            scope[item.model + "Pred"] = item.pred;
+            rmsInput.push(item.pred);
           });
+          for (let i = 0; i < rmsInput[0].length; i++) {
+            let valuesToRms = [];
+            rmsInput.forEach(values => {
+              valuesToRms.push(values[i]);
+            });
+            rmsValues.push(scope.calculateRMS(valuesToRms));
+          }               
+          scope["covidNetPred"] = rmsValues;                     
           scope.isShowLoading = false;
           scope.isModalVisible = true;
 
-          scope.updateChart(predictions);
+          scope.updateChart(rmsValues);
         } else if (!response || (!response.out && response.err)) {
           scope.isShowLoading = false;
           scope.showErrorModal = true;
@@ -592,7 +566,6 @@ export default {
         "maxAST",
         "maxBilirubin",
         "maxMNO",
-        "minMNO",
         "minProtrombIndex",
         "maxFibrinogen",
         "maxCreatinine",
@@ -635,7 +608,6 @@ export default {
         "maxAST",
         "maxBilirubin",
         "maxMNO",
-        "minMNO",
         "minProtrombIndex",
         "maxFibrinogen",
         "maxCreatinine",
@@ -686,17 +658,16 @@ export default {
     },
 
     updateChart(predictions) {
-      const dataLen = predictions[0].pred.length;
+      const dataLen = predictions.length;
       if (dataLen > 1) {
         this.showChart = true;
-        const dataSets = predictions.map((item) => {
-          return {
-            label: item.model, 
-            borderColor: this.getChartColor(item.model),
-            backgroundColor: this.getChartColor(item.model),
-            data: item.pred.map(i => (i* 100).toFixed(2)),
-          };
-        });
+        const dataSets = [{
+            label: "Вероятность, %", 
+            borderColor: this.getChartColor('covidNet'),
+            backgroundColor: this.getChartColor('covidNet'),
+            data: predictions.map(i => (i* 100).toFixed(2)),
+          }];
+
         this.chartData = {
           labels: [...Array(dataLen).keys()],
           datasets: dataSets,
@@ -812,7 +783,6 @@ export default {
       this.maxUrea = 12;
       this.maxCreatinine = 152;
       this.maxMNO = 1.46;
-      this.minMNO = 1.32;
       this.maxFerritin = 530;
       this.maxDDimer = 4;
       this.minProtrombIndex = 68;
@@ -838,6 +808,12 @@ export default {
         this[fieldName] = historyObj[fieldName];
       });
     },
+
+    calculateRMS(values) {
+      const sqrs = values.map(i => Math.pow(i, 2));
+      const sum = sqrs.reduce((partialSum, a) => partialSum + a, 0);
+      return Math.sqrt(sum);
+    }
   },
   watch: {
     currentPoint() {
