@@ -15,9 +15,11 @@ async function createWindow() {
   // Create the browser window.
   const win = new BrowserWindow({
     // backgroundColor: '#B2B2B2',
+    autoHideMenuBar: true,
     darkTheme: true,
     width: 1240,
     height: 845,
+    icon: './src/assets/virus.png',
     webPreferences: {
       
       // Use pluginOptions.nodeIntegration, leave this alone
