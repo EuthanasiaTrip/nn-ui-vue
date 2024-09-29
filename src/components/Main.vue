@@ -83,9 +83,6 @@
           <button v-on:click="onPredictClick" style="margin-right: 1%">
             Сделать предсказание
           </button>
-          <button v-on:click="onSetTestDataClick" style="margin-right: 1%" v-show="true">
-            Заполнить тестовыми данными
-          </button>
           <p>
             {{ currentPointCaption }}
           </p>
@@ -755,38 +752,6 @@ export default {
       this.history = [];
       this.currentPoint = 0;
       this.currentPointCaption = "Точка 1";
-    },
-
-    onSetTestDataClick() {
-      this.sex = false;
-      this.age = 65;
-      this.weight = 80;
-      this.isSmoking = true;
-      this.maxTemp = 38;
-      this.maxDNSeverityCategory = "0";
-      this.maxBP = 23;
-      this.minSaturation = 85;
-      this.hasPneumo = true;
-      this.maxKT = "0";
-      this.hasAsthma = true;
-      this.minAbsLymph = 0.84;
-      this.maxAbsLeic = 15.54;
-      this.minHemoglobin = 150;
-      this.maxPlt = 380;
-      this.maxESR = 37;
-      this.maxCommonProtein = 65.8;
-      this.maxCProtein = 104;
-      this.maxGlucose = 21;
-      this.maxBilirubin = 17.7;
-      this.maxALT = 97.17;
-      this.maxAST = 97.38;
-      this.maxUrea = 12;
-      this.maxCreatinine = 152;
-      this.maxMNO = 1.46;
-      this.maxFerritin = 530;
-      this.maxDDimer = 4;
-      this.minProtrombIndex = 68;
-      this.maxFibrinogen = 4;
     },
 
     saveHistory() {
